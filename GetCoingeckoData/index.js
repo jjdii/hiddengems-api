@@ -4,9 +4,6 @@ const { PromisePool } = require('@supercharge/promise-pool')
 
 module.exports = async function (context, req) {
     const provider = 'coingecko';
-    // const provider = req.body.provider || null
-    // if (!provider) throw new Error(`'provider' not found in post body`)
-
     const options = req.body.options || {}
 
     let coins = []
@@ -104,6 +101,7 @@ module.exports = async function (context, req) {
 
     } catch (error) {
         let errorMessage = 'Something went wrong. Please try again in a minute.'
+
         if (error.length > 0) {
             error.forEach((err) => {
                 if (err.toString().includes('429')) {
@@ -111,16 +109,8 @@ module.exports = async function (context, req) {
                     return false;
                 }
             })
-            // if (JSON.stringify(error).includes('429')) {
-            // if (error.message.includes('429')) {
-            //     errorMessage = 'CoinGecko API limit exceeded. Please try again in a minute.'
-            // }
         } 
-        // else {
-        //     if (error.toString().includes('429')) {
-        //         errorMessage = 'CoinGecko API limit exceeded. Please try again in a minute.'
-        //     }
-        // }
+
         context.res = {
             body: {
                 message: errorMessage,
