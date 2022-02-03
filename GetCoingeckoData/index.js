@@ -28,29 +28,25 @@ module.exports = async function (context, req) {
                     sparkline: false
                 }
             };
-            let dataPath = ['data']
-            let pricePath = ['current_price']
-            let volumePath = ['total_volume']
 
             context.log(`GET ${_.get(httpOptions, 'url', null)} - page #${page}`)
 
             const get = await axios(httpOptions)
 
-            const getData = _.get(get, dataPath, []).map((coin) => {
+            const getData = _.get(get, ['data'], []).map((coin) => {
                 return {
                     id: coin.id,
                     name: coin.name,
                     symbol: coin.symbol,
                     image: coin.image,
-                    price: _.get(coin, pricePath, null),
-                    volume: _.get(coin, volumePath, null)
+                    price: _.get(coin, ['current_price'], null),
+                    volume: _.get(coin, ['total_volume'], null)
                 }
             })
 
             return getData
         }
 
-        // const { results, errors } = await PromisePool
         const { results, errors } = await PromisePool
             .withConcurrency(50) // coingecko api limit 50/minute
             .for(_.range(1, 46, 1))
@@ -61,40 +57,36 @@ module.exports = async function (context, req) {
             //   })
             .process(async (data, index, pool) => {
                 const response = await getCoinsByPage(data)
-                // console.log('response.length',response.length)
                 return response
             })
         
         if (errors.length > 0) {
-            // console.log(errors)
             throw errors
         }
+
         if (results) {
-            // console.log('results.length',results.length)
-            // coins = results.map((result) => _.get(result, 0, null))
-            // coins = results.map((result) => result)
-
-            results.forEach((result) => {
-                // console.log('result.length',result.length)
+            for (const result of results) {
+            // results.forEach((result) => {
                 coins = coins.concat(...result)
-            })
-        } else {
-
+            // })
+            }
         }
-        // console.log('coins.length',coins.length)
+        
+        const coinsLength = coins.length
 
-        if (options.filter) {
+        if (coinsLength > 0 && options.filter) {
             coins = coins.filter((coin) => {
                 const coinPrice = _.get(coin, 'price', null)
                 const coinVolume = _.get(coin, 'volume', null)
                 return (coinPrice <= options.price_max && coinVolume >= options.volume_min)
             })
         } 
-        if (options.unique) {
+
+        if (coinsLength > 0 && options.unique) {
             coins = _.uniqBy(coins, (coin) => coin.id)
         }
 
-        const coinsLength = coins.length
+        
         context.log('------------------------------------')
         context.log(`Retrieved ${coinsLength} coins from ${provider}.`)
         context.log('------------------------------------')

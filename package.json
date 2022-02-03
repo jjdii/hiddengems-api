@@ -1,7 +1,8 @@
 {
   "name": "hiddengems-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "Hidden Gems Serverless API",
+  "private": true,
   "scripts": {
     "start": "func start",
     "test": "echo \"No tests yet...\""
